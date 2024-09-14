@@ -1,0 +1,66 @@
+province,year,unemployment_rate_all,unemployment_rate_no_postsecondary,unemployment_rate_postsecondary
+Alberta,2017/2018,0.07,0.09,0.06
+British Columbia,2017/2018,0.05,0.07,0.04
+Manitoba,2017/2018,0.06,0.09,0.04
+New Brunswick,2017/2018,0.08,0.13,0.05
+Newfoundland and Labrador,2017/2018,0.14,0.19,0.09
+Nova Scotia,2017/2018,0.08,0.12,0.06
+Ontario,2017/2018,0.06,0.09,0.05
+Prince Edward Island,2017/2018,0.10,0.16,0.06
+Quebec,2017/2018,0.06,0.08,0.04
+Saskatchewan,2017/2018,0.06,0.09,0.04
+Northwest Territories,2017/2018,0.00,0.00,0.00
+Nunavut,2017/2018,0.00,0.00,0.00
+Yukon Territory,2017/2018,0.00,0.00,0.00
+Alberta,2018/2019,0.07,0.11,0.05
+British Columbia,2018/2019,0.05,0.07,0.04
+Manitoba,2018/2019,0.05,0.08,0.04
+New Brunswick,2018/2019,0.08,0.12,0.05
+Newfoundland and Labrador,2018/2019,0.12,0.16,0.08
+Nova Scotia,2018/2019,0.07,0.11,0.05
+Ontario,2018/2019,0.06,0.09,0.04
+Prince Edward Island,2018/2019,0.09,0.13,0.06
+Quebec,2018/2019,0.05,0.07,0.04
+Saskatchewan,2018/2019,0.06,0.09,0.04
+Northwest Territories,2018/2019,0.00,0.00,0.00
+Nunavut,2018/2019,0.00,0.00,0.00
+Yukon Territory,2018/2019,0.00,0.00,0.00
+Alberta,2019/2020,0.11,0.18,0.09
+British Columbia,2019/2020,0.09,0.13,0.07
+Manitoba,2019/2020,0.08,0.12,0.06
+New Brunswick,2019/2020,0.10,0.16,0.07
+Newfoundland and Labrador,2019/2020,0.14,0.20,0.10
+Nova Scotia,2019/2020,0.10,0.14,0.08
+Ontario,2019/2020,0.10,0.16,0.08
+Prince Edward Island,2019/2020,0.11,0.18,0.07
+Quebec,2019/2020,0.09,0.13,0.07
+Saskatchewan,2019/2020,0.08,0.13,0.06
+Northwest Territories,2019/2020,0.00,0.00,0.00
+Nunavut,2019/2020,0.00,0.00,0.00
+Yukon Territory,2019/2020,0.00,0.00,0.00
+Alberta,2020/2021,0.09,0.13,0.07
+British Columbia,2020/2021,0.07,0.10,0.05
+Manitoba,2020/2021,0.07,0.10,0.05
+New Brunswick,2020/2021,0.09,0.14,0.06
+Newfoundland and Labrador,2020/2021,0.13,0.17,0.09
+Nova Scotia,2020/2021,0.09,0.13,0.07
+Ontario,2020/2021,0.08,0.14,0.06
+Prince Edward Island,2020/2021,0.10,0.15,0.06
+Quebec,2020/2021,0.06,0.09,0.05
+Saskatchewan,2020/2021,0.07,0.11,0.05
+Northwest Territories,2020/2021,0.00,0.00,0.00
+Nunavut,2020/2021,0.00,0.00,0.00
+Yukon Territory,2020/2021,0.00,0.00,0.00
+Alberta,2021/2022,0.06,0.09,0.05
+British Columbia,2021/2022,0.05,0.07,0.04
+Manitoba,2021/2022,0.05,0.07,0.03
+New Brunswick,2021/2022,0.07,0.10,0.05
+Newfoundland and Labrador,2021/2022,0.11,0.16,0.08
+Nova Scotia,2021/2022,0.07,0.10,0.05
+Ontario,2021/2022,0.06,0.09,0.04
+Prince Edward Island,2021/2022,0.08,0.12,0.05
+Quebec,2021/2022,0.04,0.07,0.03
+Saskatchewan,2021/2022,0.05,0.07,0.03
+Northwest Territories,2021/2022,0.00,0.00,0.00
+Nunavut,2021/2022,0.00,0.00,0.00
+Yukon Territory,2021/2022,0.00,0.00,0.00

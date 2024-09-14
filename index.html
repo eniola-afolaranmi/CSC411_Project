@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canada Postsecondary Institutions Map</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .map {
+            width: 100%;
+            height: 100%;
+            background-color: #cce5ff; /* Light blue for water */
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 10;
+        }
+        #year-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 10;
+        }
+        #year-controls button {
+            margin: 5px;
+            padding: 10px;
+            cursor: pointer;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #year-controls button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        #chart {
+        position: absolute;
+        display: none; /* Initially hidden */
+        background-color: white; 
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 20px;
+        z-index: 50;
+        /* Additional styles to ensure proper visibility */
+        }
+        .invisible {
+            display: none;
+        }
+        #toggle-container {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 10;
+        }
+        #close-chart {
+            display: block; /* Displayed when the chart is visible */
+            margin: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="year-controls">
+        <button onclick="updateYear('2017/2018')">2017/2018</button>
+        <button onclick="updateYear('2018/2019')">2018/2019</button>
+        <button onclick="updateYear('2019/2020')">2019/2020</button>
+        <button onclick="updateYear('2020/2021')">2020/2021</button>
+        <button onclick="updateYear('2021/2022')">2021/2022</button>
+    </div>
+    <div id="map" class="map"></div>
+    <div id="info" class="invisible"></div>
+    <div id="chart">
+        <button id="close-chart" onclick="hideChart()">Close Chart</button>
+    </div>
+    <div id="toggle-container">
+        <label>
+            <input type="radio" name="mode" value="enrolment" checked onclick="updateMode('enrolment')">
+            Enrolment
+        </label>
+        <label>
+            <input type="radio" name="mode" value="unemployment_all" onclick="updateMode('unemployment_all')">
+            Unemployment (All Education Levels)
+        </label>
+        <label>
+            <input type="radio" name="mode" value="unemployment_no_postsecondary" onclick="updateMode('unemployment_no_postsecondary')">
+            Unemployment (No Postsecondary Education)
+        </label>
+        <label>
+            <input type="radio" name="mode" value="unemployment_postsecondary" onclick="updateMode('unemployment_postsecondary')">
+            Unemployment (Postsecondary Education)
+        </label>
+    </div>
+    <script>console.log("This is a test message");</script>
+    <script>
+        console.log("hi");
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        const svg = d3.select("#map")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .style("background-color", "#cce5ff") // Light blue background for water
+            .call(d3.zoom().on("zoom", zoomed));
+        
+        const projection = d3.geoMercator()
+            .center([-106.3468, 56.1304]) // Center on Canada
+            .translate([width / 2, height / 2])
+            .scale(800); // Adjust scale as needed
+        
+        const path = d3.geoPath()
+            .projection(projection);
+        
+        const g = svg.append("g");
+        
+        // Define color scales for enrolment count changes
+        const enrolmentColorScale = d3.scaleSequential(d3.interpolateRdYlGn)
+            .domain([-50000, 50000]); // Adjust domain based on expected change in enrolment counts
+        
+        // Define color scales for unemployment rates
+        const unemploymentColorScale = d3.scaleSequential(d3.interpolateBlues)
+            .domain([0, 0.1]); // Adjust domain based on expected unemployment rates
+        
+        let enrolmentData = [];
+        let unemploymentData = [];
+        let debtData = [];
+        let currentYear = '2017/2018'; // Default year
+        let previousYear = '2016/2017'; // Default previous year
+        let currentData = [];
+        let currentMode = 'enrolment'; // Default mode
+        
+        // Zoom function
+        function zoomed(event) {
+            g.attr("transform", event.transform);
+            updateIcons(currentData);
+        }
+        
+        // Load the GeoJSON data for Canada's map
+        d3.json("https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/canada.geojson").then(canada => {
+            const provinces = g.append("g")
+                .selectAll("path")
+                .data(canada.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("fill", "#ccc")
+                .attr("stroke", "#333")
+                .on("click", function(event, d) {
+                    const province = d.properties.name;
+                    displayTimelineChart(province, event.pageX, event.pageY);
+                });
+        
+            // Load the enrolment data
+            d3.csv("province_enrolment.csv").then(data => {
+                enrolmentData = data.map(d => ({
+                    province: d.province,
+                    year: d.year,
+                    enrolment_count: +d.enrolment_count // Convert enrolment count to number
+                }));
+        
+                // Load the unemployment data
+                d3.csv("province_unemployment.csv").then(data => {
+                    unemploymentData = data.map(d => ({
+                        province: d.province,
+                        year: d.year,
+                        unemployment_rate_all: +d.unemployment_rate_all,
+                        unemployment_rate_no_postsecondary: +d.unemployment_rate_no_postsecondary,
+                        unemployment_rate_postsecondary: +d.unemployment_rate_postsecondary
+                    }));
+        
+                    // Load the debt data
+                    d3.csv("province_debt.csv").then(data => {
+                        debtData = data.map(d => ({
+                            province: d.province,
+                            year: d.year,
+                            debt: +d.debt // Convert debt to number
+                        }));
+        
+                        // Compute changes in enrolment counts
+                        computeEnrolmentChanges();
+        
+                        // Update provinces' colors based on enrolment count changes
+                        updateProvincesColor();
+        
+                        // Load the postsecondary institutions data
+                        d3.csv("institutions.csv").then(instData => {
+                            currentData = instData;
+                            updateIcons(instData);
+                        }).catch(error => {
+                            console.error("Error loading institutions CSV data:", error);
+                        });
+        
+                    }).catch(error => {
+                        console.error("Error loading debt CSV data:", error);
+                    });
+        
+                }).catch(error => {
+                    console.error("Error loading unemployment CSV data:", error);
+                });
+        
+            }).catch(error => {
+                console.error("Error loading enrolment CSV data:", error);
+            });
+        
+        }).catch(error => {
+            console.error("Error loading GeoJSON data:", error);
+        });
+        
+        function computeEnrolmentChanges() {
+            console.log(`Computing enrolment changes for year: ${currentYear}, comparing with previous year: ${previousYear}`);
+            enrolmentData.forEach(d => {
+                const prev = enrolmentData.find(e => e.province === d.province && e.year === previousYear);
+                if (prev) {
+                    d.change_in_enrolment = d.enrolment_count - prev.enrolment_count;
+                } else {
+                    d.change_in_enrolment = 0;
+                }
+            });
+        }
+        
+        function updateProvincesColor() {
+            if (currentMode === 'enrolment') {
+                g.selectAll("path")
+                    .transition()
+                    .duration(500)
+                    .attr("fill", d => {
+                        const provinceData = enrolmentData.find(p => p.province === d.properties.name && p.year === currentYear);
+                        return provinceData ? enrolmentColorScale(provinceData.change_in_enrolment) : "#ccc";
+                    });
+            } else {
+                g.selectAll("path")
+                    .transition()
+                    .duration(500)
+                    .attr("fill", d => {
+                        const provinceData = unemploymentData.find(p => p.province === d.properties.name && p.year === currentYear);
+                        let rate;
+                        if (currentMode === 'unemployment_all') {
+                            rate = provinceData ? provinceData.unemployment_rate_all : 0;
+                        } else if (currentMode === 'unemployment_no_postsecondary') {
+                            rate = provinceData ? provinceData.unemployment_rate_no_postsecondary : 0;
+                        } else if (currentMode === 'unemployment_postsecondary') {
+                            rate = provinceData ? provinceData.unemployment_rate_postsecondary : 0;
+                        }
+                        return unemploymentColorScale(rate);
+                    });
+            }
+        }
+        
+        function updateIcons(data) {
+            const icons = g.selectAll("image")
+                .data(data, d => d.name);
+        
+            icons.enter()
+                .append("image")
+                .attr("xlink:href", "university.png") // URL of the icon image
+                .attr("width", 20) // Width of the icon
+                .attr("height", 20) // Height of the icon
+                .attr("x", d => projection([d.longitude, d.latitude])[0] - 10) // Position the icon
+                .attr("y", d => projection([d.longitude, d.latitude])[1] - 10) // Position the icon
+                .on("mouseover", function(event, d) {
+                    d3.select("#info")
+                        .html(`
+                            <strong>${d.name}</strong><br>
+                            City: ${d.city}<br>
+                            Province: ${d.province}<br>
+                            <button onclick="showChart('${d.province}')">Show Chart</button>
+                        `)
+                        .style("left", `${event.pageX}px`)
+                        .style("top", `${event.pageY}px`)
+                        .classed("invisible", false);
+                })
+                .on("mouseout", function() {
+                    d3.select("#info").classed("invisible", true);
+                });
+        
+            icons.exit().remove();
+        }
+        
+        function updateYear(year) {
+            currentYear = year;
+            previousYear = (parseInt(year.split('/')[0]) - 1) + '/' + (parseInt(year.split('/')[1]) - 1);
+            computeEnrolmentChanges();
+            updateProvincesColor();
+        
+            // Update the active class on buttons
+            document.querySelectorAll("#year-controls button").forEach(button => {
+                button.classList.remove("active");
+            });
+            event.target.classList.add("active");
+        }
+        
+        function updateMode(mode) {
+            currentMode = mode;
+            updateProvincesColor();
+        }
+        
+        function displayTimelineChart(province, x, y) {
+            const provinceData = debtData.filter(d => d.province === province);
+            const chart = d3.select("#chart");
+            chart.classed("invisible", false);
+            chart.style("left", `${x}px`).style("top", `${y}px`).style("display", "block");
+
+            // Remove any existing SVG inside the chart
+            chart.select("svg").remove();
+
+            // Create a new SVG element inside the chart
+            const svg = chart.append("svg")
+                .attr("width", 900)
+                .attr("height", 400);
+
+            const margin = { top: 20, right: 20, bottom: 50, left: 50 };
+            const width = +svg.attr("width") - margin.left - margin.right;
+            const height = +svg.attr("height") - margin.top - margin.bottom;
+
+            const xScale = d3.scaleBand()
+                .domain(provinceData.map(d => d.year))
+                .range([0, width])
+                .padding(0.1);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(provinceData, d => d.debt)])
+                .nice()
+                .range([height, 0]);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Add the title
+            svg.append("text")
+                .attr("x", width / 2 + margin.left)
+                .attr("y", margin.top / 2)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .attr("font-weight", "bold")
+                .text(`Average Student Debt Over Time for ${province}`);
+
+            // Add x-axis
+            g.append("g")
+                .attr("class", "axis axis--x")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScale));
+
+            // Add y-axis
+            g.append("g")
+                .attr("class", "axis axis--y")
+                .call(d3.axisLeft(yScale).ticks(10, "d"));
+
+            // Line generator function
+            const line = d3.line()
+                .x(d => xScale(d.year) + xScale.bandwidth() / 2) // Position X in the middle of the band
+                .y(d => yScale(d.debt));
+
+            // Add the line path
+            g.append("path")
+                .data([provinceData])
+                .attr("class", "line")
+                .attr("d", line)
+                .attr("fill", "none")
+                .attr("stroke", "steelblue")
+                .attr("stroke-width", 2);
+
+            // Add points to the line
+            g.selectAll(".dot")
+                .data(provinceData)
+                .enter().append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => xScale(d.year) + xScale.bandwidth() / 2)
+                .attr("cy", d => yScale(d.debt))
+                .attr("r", 3)
+                .attr("fill", "steelblue");
+
+            g.append("text")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom / 2)
+                .attr("text-anchor", "middle")
+                .text("Year");
+
+            g.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x", 0 - (height / 2))
+                .attr("dy", "1em")
+                .attr("text-anchor", "middle")
+                .text("Amount");
+        }
+
+        function hideChart() {
+            d3.select("#chart").classed("invisible", true).style("display", "none");
+        }
+
+        document.getElementById("year-controls").addEventListener("click", function(event) {
+            if (event.target.tagName === "BUTTON") {
+                updateYear(event.target.textContent);
+            }
+        });
+        
+        document.getElementById("toggle-container").addEventListener("change", function(event) {
+            if (event.target.name === "mode") {
+                updateMode(event.target.value);
+            }
+        });
+    </script>
+</body>
+</html>
